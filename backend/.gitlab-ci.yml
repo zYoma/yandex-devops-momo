@@ -31,6 +31,11 @@ build-backend-code-job:
         - backend/**/*
 
 spotbugs-sast:
+  variables:
+    COMPILE: "false"
+    SAST_JAVA_VERSION: 16
+    MAVEN_REPO_PATH: $CI_PROJECT_DIR/.m2/repository
+    SPRING_CLOUD_VAULT_ENABLED: "false"
   dependencies:
     - build-backend-code-job
   artifacts:
