@@ -1,0 +1,102 @@
+stages:
+  - build
+  - test
+  - release
+  - deploy
+
+include:
+  - template: Security/SAST.gitlab-ci.yml
+  - project: 'templates/ci'
+    file: 'DockerInDockerTemplate.yml'
+
+variables:
+  VERSION: 1.0.${CI_PIPELINE_ID}
+
+build-backend-code-job:
+  stage: build
+  image: docker:20.10.12-dind-rootless
+  before_script:
+    - until docker info; do sleep 1; done
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - cd backend
+    - >
+      docker build
+      --build-arg VERSION=$VERSION
+      --tag $CI_REGISTRY_IMAGE/momo:$CI_COMMIT_SHA
+      .
+    - docker push $CI_REGISTRY_IMAGE/momo:$CI_COMMIT_SHA
+  rules:
+    - changes:
+        - backend/**/*
+
+spotbugs-sast:
+  dependencies:
+    - build-backend-code-job
+  artifacts:
+    reports:
+      sast: gl-sast-report.json
+
+sonarqube-backend-sast:
+  stage: test
+  image: golang:alpine
+  script:
+    - cd backend
+    - go test -v ./...
+  dependencies:
+    - build-backend-code-job
+
+upload-backend-release:
+  variables:
+    GIT_STRATEGY: none
+  image: docker:20.10.12-dind-rootless
+  stage: release
+  before_script:
+    - until docker info; do sleep 1; done
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  needs:
+    - spotbugs-sast
+    - sonarqube-backend-sast
+  script:
+    - docker pull $CI_REGISTRY_IMAGE/momo:$CI_COMMIT_SHA
+    - docker tag $CI_REGISTRY_IMAGE/momo:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE/momo:latest
+    - docker push $CI_REGISTRY_IMAGE/momo:latest
+
+deploy:
+  stage: deploy
+  image: vault:1.11.3
+  before_script:
+    - apk add openssh-client bash
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo "$SSH_KNOWN_HOSTS" >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+    - echo "$SSH_PRIVATE_KEY" >> ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - scp -i ~/.ssh/id_rsa docker-compose.yml ${DEV_USER}@${DEV_HOST}:/home/student
+  script:
+    - export VAULT_TOKEN="$(vault write -field=token auth/jwt/login role=sausage-store jwt=$CI_JOB_JWT)"
+    - ssh ${DEV_USER}@${DEV_HOST}
+      "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY;
+      docker pull $CI_REGISTRY_IMAGE/momo:latest;
+      export "CURRENT_VERSION=${VERSION}";
+      export "VERSION=${VERSION}";
+      export "DEV_HOST=${DEV_HOST}";
+      export "SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}";
+      export "SPRING_DATASOURCE_USERNAME=$(vault kv get -field=spring.datasource.username secret/sausage-store/db-username)";
+      export "SPRING_DATASOURCE_PASSWORD=$(vault kv get -field=spring.datasource.password secret/sausage-store/db-password)";
+      export "MONGO_USER=$(vault kv get -field=user secret/sausage-store/mongo-user)";
+      export "MONGO_PASSWORD=$(vault kv get -field=password secret/sausage-store/mongo-password)";
+      setsid /bin/bash -s " < ./backend/backend_deploy.sh
+  needs:
+    - upload-backend-release
+  when: manual
+  environment:
+    name: backend/$CI_COMMIT_REF_NAME
+    url: http://std-017-03.praktikum-services.tech
+  only:
+    - branches
+  except:
+    - main
