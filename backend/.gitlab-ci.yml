@@ -31,11 +31,6 @@ build-backend-code-job:
         - backend/**/*
 
 spotbugs-sast:
-  variables:
-    COMPILE: "false"
-    SAST_JAVA_VERSION: 16
-    MAVEN_REPO_PATH: $CI_PROJECT_DIR/.m2/repository
-    SPRING_CLOUD_VAULT_ENABLED: "false"
   dependencies:
     - build-backend-code-job
   artifacts:
@@ -60,7 +55,6 @@ upload-backend-release:
     - until docker info; do sleep 1; done
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   needs:
-    - spotbugs-sast
     - sonarqube-backend-sast
   script:
     - docker pull $CI_REGISTRY_IMAGE/momo:$CI_COMMIT_SHA
