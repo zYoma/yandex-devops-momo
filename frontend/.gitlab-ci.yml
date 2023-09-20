@@ -34,6 +34,8 @@ sonarqube-frontend-sast:
   image: sonarsource/sonar-scanner-cli
   script:
     - cd frontend
+    - export "NODE_ENV=production"
+    - export "VUE_APP_API_URL=http://localhost:80"
     - >
       sonar-scanner -Dsonar.qualitygate.wait=true
       -Dsonar.projectKey=${SONAR_PROJECT_KEY_FRONTEND}
