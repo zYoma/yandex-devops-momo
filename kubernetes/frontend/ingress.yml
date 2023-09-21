@@ -11,10 +11,10 @@ spec:
   ingressClassName: "nginx"
   tls:
     - hosts:
-        - "https://devops-zimin.shop"
+        - "devops-zimin.shop"
       secretName: yc-certmgr-cert-id-fpqckhs7pjms4p5mt2vg
   rules:
-    - host: "https://devops-zimin.shop"
+    - host: "devops-zimin.shop"
       http:
         paths:
         - path: /

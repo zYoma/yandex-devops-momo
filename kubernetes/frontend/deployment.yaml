@@ -10,16 +10,11 @@ spec:
   revisionHistoryLimit: 15
   strategy:
     type: RollingUpdate
-  selector:
-    matchLabels:
-      app: frontend
   template:
     metadata:
       labels:
         app: frontend
     spec:
-      nodeSelector:
-        app: frontend
       containers:
         - name: frontend
           image: gitlab.praktikum-services.ru:5050/std-017-003/momo/momo:latest
