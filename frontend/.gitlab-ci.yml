@@ -55,32 +55,22 @@ upload-frontend-release:
 
 deploy:
   stage: deploy
-  image: alpine:3.15.0
-  before_script:
-    - apk add openssh-client bash
-    - eval $(ssh-agent -s)
-    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - echo "$SSH_KNOWN_HOSTS" >> ~/.ssh/known_hosts
-    - chmod 644 ~/.ssh/known_hosts
-    - echo "$SSH_PRIVATE_KEY" >> ~/.ssh/id_rsa
-    - chmod 600 ~/.ssh/id_rsa
-    - scp -i ~/.ssh/id_rsa docker-compose.yml ${DEV_USER}@${DEV_HOST}:/home/student
-  script:
-    - ssh ${DEV_USER}@${DEV_HOST}
-      "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY;
-      docker pull $CI_REGISTRY_IMAGE/momo:latest;
-      export "CURRENT_VERSION=${VERSION}";
-      export "VERSION=${VERSION}";
-      export "DEV_HOST=${DEV_HOST}";
-      setsid /bin/bash -s " < ./frontend/frontend_deploy.sh
+  image: alpine/k8s:1.24.16
+  environment:
+    name: k8s
+    url: https://zimin-nikolay-13.k8s.praktikum-services.tech
   needs:
     - upload-frontend-release
   when: manual
-  environment:
-    name: frontend/$CI_COMMIT_REF_NAME
-    url: http://std-017-03.praktikum-services.tech
+  before_script:
+    - mkdir -p ~/.kube
+    - chmod 700 ~/.kube
+    - cat "$KUBE_CONFIG" >> ~/.kube/config
+    - chmod 644 ~/.kube/config
+  script:
+    - kubectl apply -f kubernetes/frontend
+  after_script:
+    - rm ~/.kube/config
   only:
     - branches
   except:
