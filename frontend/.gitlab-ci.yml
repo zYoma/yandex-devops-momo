@@ -23,9 +23,9 @@ build-frontend-code-job:
     - >
       docker build
       --build-arg VERSION=$VERSION
-      --tag $CI_REGISTRY_IMAGE/momo:$CI_COMMIT_SHA
+      --tag $CI_REGISTRY_IMAGE/momo-frontend:$CI_COMMIT_SHA
       .
-    - docker push $CI_REGISTRY_IMAGE/momo:$CI_COMMIT_SHA
+    - docker push $CI_REGISTRY_IMAGE/momo-frontend:$CI_COMMIT_SHA
   only:
     changes:
       - frontend/**/*
@@ -49,9 +49,9 @@ upload-frontend-release:
     - until docker info; do sleep 1; done
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
-    - docker pull $CI_REGISTRY_IMAGE/momo:$CI_COMMIT_SHA
-    - docker tag $CI_REGISTRY_IMAGE/momo:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE/momo:latest
-    - docker push $CI_REGISTRY_IMAGE/momo:latest
+    - docker pull $CI_REGISTRY_IMAGE/momo-frontend:$CI_COMMIT_SHA
+    - docker tag $CI_REGISTRY_IMAGE/momo-frontend:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE/momo-frontend:latest
+    - docker push $CI_REGISTRY_IMAGE/momo-frontend:latest
 
 deploy:
   stage: deploy

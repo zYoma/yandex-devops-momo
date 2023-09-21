@@ -23,9 +23,9 @@ build-backend-code-job:
     - >
       docker build
       --build-arg VERSION=$VERSION
-      --tag $CI_REGISTRY_IMAGE/momo:$CI_COMMIT_SHA
+      --tag $CI_REGISTRY_IMAGE/momo-backend:$CI_COMMIT_SHA
       .
-    - docker push $CI_REGISTRY_IMAGE/momo:$CI_COMMIT_SHA
+    - docker push $CI_REGISTRY_IMAGE/momo-backend:$CI_COMMIT_SHA
   rules:
     - changes:
         - backend/**/*
@@ -57,9 +57,9 @@ upload-backend-release:
   needs:
     - sonarqube-backend-sast
   script:
-    - docker pull $CI_REGISTRY_IMAGE/momo:$CI_COMMIT_SHA
-    - docker tag $CI_REGISTRY_IMAGE/momo:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE/momo:latest
-    - docker push $CI_REGISTRY_IMAGE/momo:latest
+    - docker pull $CI_REGISTRY_IMAGE/momo-backend:$CI_COMMIT_SHA
+    - docker tag $CI_REGISTRY_IMAGE/momo-backend:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE/momo-backend:latest
+    - docker push $CI_REGISTRY_IMAGE/momo-backend:latest
 
 deploy:
   stage: deploy

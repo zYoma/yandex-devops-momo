@@ -27,7 +27,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: gitlab.praktikum-services.ru:5050/std-017-003/momo/momo:latest
+          image: gitlab.praktikum-services.ru:5050/std-017-003/momo-backend/momo-backend:latest
           imagePullPolicy: IfNotPresent
           resources:
             limits:

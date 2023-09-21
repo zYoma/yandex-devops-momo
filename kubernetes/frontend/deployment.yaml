@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: gitlab.praktikum-services.ru:5050/std-017-003/momo/momo:latest
+          image: gitlab.praktikum-services.ru:5050/std-017-003/momo-frontend/momo-frontend:latest
           imagePullPolicy: IfNotPresent
           ports:
             - name: frontend
