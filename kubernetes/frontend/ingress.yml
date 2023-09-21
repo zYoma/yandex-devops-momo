@@ -3,13 +3,18 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: frontend-ingress
+  annotations:
+    ingress.alb.yc.io/subnets: e9be0bfmjaprj8iuftgn,e9bpj7ad8396bqtajt2r
+    ingress.alb.yc.io/external-ipv4-address: 51.250.85.163
+    ingress.alb.yc.io/group-name: c497peak9bap37pu6s4t
 spec:
   ingressClassName: "nginx"
   tls:
     - hosts:
-        - "zimin-nikolay-13.k8s.praktikum-services.tech"
+        - "https://devops-zimin.shop"
+      secretName: yc-certmgr-cert-id-fpqckhs7pjms4p5mt2vg
   rules:
-    - host: "zimin-nikolay-13.k8s.praktikum-services.tech"
+    - host: "https://devops-zimin.shop"
       http:
         paths:
         - path: /

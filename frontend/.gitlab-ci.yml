@@ -58,7 +58,7 @@ deploy:
   image: alpine/k8s:1.24.16
   environment:
     name: k8s
-    url: https://zimin-nikolay-13.k8s.praktikum-services.tech
+    url: https://devops-zimin.shop
   needs:
     - upload-frontend-release
   when: manual
