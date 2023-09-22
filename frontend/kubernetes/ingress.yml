@@ -4,8 +4,8 @@ kind: Ingress
 metadata:
   name: frontend-ingress
   annotations:
-    ingress.alb.yc.io/subnets: e9be0bfmjaprj8iuftgn,e9bpj7ad8396bqtajt2r
-    ingress.alb.yc.io/external-ipv4-address: 51.250.85.163
+    ingress.alb.yc.io/subnets: 10.96.0.0/16
+    ingress.alb.yc.io/external-ipv4-address: 158.160.102.186
     ingress.alb.yc.io/group-name: c497peak9bap37pu6s4t
 spec:
   ingressClassName: "nginx"
