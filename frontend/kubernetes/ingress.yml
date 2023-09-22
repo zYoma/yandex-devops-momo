@@ -4,16 +4,14 @@ kind: Ingress
 metadata:
   name: frontend-ingress
   annotations:
-    ingress.alb.yc.io/subnets: e9bkd42fueck5g2rmclq
-    ingress.alb.yc.io/security-groups: enpvtp54qr793tu9rp9v
-    ingress.alb.yc.io/external-ipv4-address: 158.160.102.186
-    ingress.alb.yc.io/group-name: alb-ingress-controller
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt"
 spec:
-  ingressClassName: "nginx"
+#  ingressClassName: "nginx"
   tls:
     - hosts:
         - "devops-zimin.shop"
-      secretName: yc-certmgr-cert-id-fpqckhs7pjms4p5mt2vg
+      secretName: letsencrypt
   rules:
     - host: "devops-zimin.shop"
       http:
