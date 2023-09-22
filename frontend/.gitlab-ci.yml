@@ -66,6 +66,7 @@ deploy:
     - mkdir -p ~/.kube
     - chmod 700 ~/.kube
     - cat "$KUBE_CONFIG" >> ~/.kube/config
+    - cat "$KUBCERT" >> ~/.kube/ca.pem
     - chmod 644 ~/.kube/config
   script:
     - kubectl apply -f kubernetes/frontend
