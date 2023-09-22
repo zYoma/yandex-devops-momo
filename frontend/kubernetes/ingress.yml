@@ -3,16 +3,17 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: frontend-ingress
-#  annotations:
-#    ingress.alb.yc.io/subnets: 10.96.0.0/16
-#    ingress.alb.yc.io/external-ipv4-address: 158.160.102.186
-#    ingress.alb.yc.io/group-name: c497peak9bap37pu6s4t
+  annotations:
+    ingress.alb.yc.io/subnets: e9bkd42fueck5g2rmclq
+    ingress.alb.yc.io/security-groups: enpvtp54qr793tu9rp9v
+    ingress.alb.yc.io/external-ipv4-address: 158.160.102.186
+    ingress.alb.yc.io/group-name: alb-ingress-controller
 spec:
   ingressClassName: "nginx"
   tls:
     - hosts:
         - "devops-zimin.shop"
-#      secretName: yc-certmgr-cert-id-fpqckhs7pjms4p5mt2vg
+      secretName: yc-certmgr-cert-id-fpqckhs7pjms4p5mt2vg
   rules:
     - host: "devops-zimin.shop"
       http:
