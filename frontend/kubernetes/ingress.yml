@@ -22,25 +22,4 @@ spec:
             service:
               name: frontend
               port:
-                number: 8080
-        - path: /auth/whoami
-          pathType: Prefix
-          backend:
-            service:
-              name: backend
-              port:
-                number: 8081
-        - path: /products
-          pathType: Prefix
-          backend:
-            service:
-              name: backend
-              port:
-                number: 8081
-        - path: /categories
-          pathType: Prefix
-          backend:
-            service:
-              name: backend
-              port:
-                number: 8081
+                number: 80
