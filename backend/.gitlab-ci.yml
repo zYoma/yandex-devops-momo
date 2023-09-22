@@ -78,7 +78,7 @@ deploy:
     - chmod 644 ~/.kube/config
   script:
     - kubectl config set-context default --namespace=default
-    - kubectl apply -f kubernetes/backend
+    - kubectl apply -f backend/kubernetes
   after_script:
     - rm ~/.kube/config
   only:
