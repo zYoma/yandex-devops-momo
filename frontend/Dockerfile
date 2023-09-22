@@ -7,4 +7,4 @@ FROM nginx:stable
 WORKDIR /app
 COPY --from=builder /usr/src/app/dist/. /usr/share/nginx/html/
 RUN ls -la /usr/share/nginx/html/ && echo "---" && ls -la /app/
-EXPOSE 80
+EXPOSE 8080
