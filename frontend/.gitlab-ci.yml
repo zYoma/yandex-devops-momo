@@ -69,7 +69,9 @@ deploy:
     - cat "$KUBCERT" >> ~/.kube/ca.pem
     - chmod 644 ~/.kube/config
   script:
-    - kubectl config use-context default
+    - kubectl config set-context default --namespace=default
+    - kubectl get namespaces
+    - kubectl get pods
     - kubectl apply -f kubernetes/frontend
   after_script:
     - rm ~/.kube/config
