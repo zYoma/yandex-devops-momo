@@ -11,6 +11,7 @@ include:
 
 variables:
   VERSION: 1.0.${CI_PIPELINE_ID}
+  SAST_EXCLUDED_ANALYZERS: "spotbugs,gosec"
 
 build-frontend-code-job:
   stage: build
@@ -30,13 +31,23 @@ build-frontend-code-job:
     changes:
       - frontend/**/*
 
-spotbugs-sast:
+sonarqube-frontend-sast:
   stage: test
-  dependencies:
+  image: sonarsource/sonar-scanner-cli:latest
+  script:
+    - cd frontend
+    - >
+      sonar-scanner \
+        -Dsonar.projectKey=momo-frontend:zimin \
+        -Dsonar.sources=. \
+        -Dsonar.host.url=https://sonarqube.praktikum-services.ru \
+        -Dsonar.login=8d6e218db931f180bba7e89ddf642e1b167dc28a
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .sonar/cache
+  needs:
     - build-frontend-code-job
-  artifacts:
-    reports:
-      sast: gl-sast-report.json
 
 upload-frontend-release:
   stage: release
@@ -44,7 +55,7 @@ upload-frontend-release:
     GIT_STRATEGY: none
   image: docker:20.10.12-dind-rootless
   dependencies:
-    - spotbugs-sast
+    - sonarqube-frontend-sast
   before_script:
     - until docker info; do sleep 1; done
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
@@ -71,6 +82,7 @@ deploy:
   script:
     - kubectl config set-context default --namespace=default
     - kubectl apply -f frontend/kubernetes
+    - kubectl rollout restart deploy frontend
   after_script:
     - rm ~/.kube/config
   only:
