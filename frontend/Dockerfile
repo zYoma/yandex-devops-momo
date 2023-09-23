@@ -1,6 +1,7 @@
 FROM node:16 as builder
 WORKDIR /usr/src/app
-ENV NODE_ENV=production
+ARG VUE_APP_API_URL=http://localhost:8081/api
+ARG NODE_ENV=dev
 COPY . .
 RUN npm install && npm run build && ls -la /usr/src/app
 
