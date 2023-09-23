@@ -1,6 +1,6 @@
 FROM node:16 as builder
 WORKDIR /usr/src/app
-ARG VUE_APP_API_URL=http://backend:8081/api
+ARG VUE_APP_API_URL=https://devops-zimin.shop/api
 ARG NODE_ENV=dev
 COPY . .
 RUN npm install && npm run build && ls -la /usr/src/app
