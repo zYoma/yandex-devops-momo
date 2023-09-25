@@ -1,0 +1,91 @@
+stages:
+  - build
+  - test
+  - release
+  - deploy
+
+include:
+  - template: Security/SAST.gitlab-ci.yml
+  - project: 'templates/ci'
+    file: 'DockerInDockerTemplate.yml'
+
+variables:
+  VERSION: 1.0.${CI_PIPELINE_ID}
+  SAST_EXCLUDED_ANALYZERS: "spotbugs,gosec"
+
+build-frontend-code-job:
+  stage: build
+  image: docker:20.10.12-dind-rootless
+  before_script:
+    - until docker info; do sleep 1; done
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - cd frontend
+    - >
+      docker build
+      --build-arg VERSION=$VERSION
+      --tag $CI_REGISTRY_IMAGE/momo-frontend:$CI_COMMIT_SHA
+      .
+    - docker push $CI_REGISTRY_IMAGE/momo-frontend:$CI_COMMIT_SHA
+  only:
+    changes:
+      - frontend/**/*
+
+sonarqube-frontend-sast:
+  stage: test
+  image: sonarsource/sonar-scanner-cli:latest
+  script:
+    - cd frontend
+    - >
+      sonar-scanner \
+        -Dsonar.projectKey=$SONAR_FRONTEND_PROJECT_KEY \
+        -Dsonar.sources=. \
+        -Dsonar.host.url=$SONARQUBE_URL \
+        -Dsonar.login=$SONARQUBE_FRONTEND_LOGIN
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .sonar/cache
+  needs:
+    - build-frontend-code-job
+
+upload-frontend-release:
+  stage: release
+  variables:
+    GIT_STRATEGY: none
+  image: docker:20.10.12-dind-rootless
+  dependencies:
+    - sonarqube-frontend-sast
+  before_script:
+    - until docker info; do sleep 1; done
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - docker pull $CI_REGISTRY_IMAGE/momo-frontend:$CI_COMMIT_SHA
+    - docker tag $CI_REGISTRY_IMAGE/momo-frontend:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE/momo-frontend:latest
+    - docker push $CI_REGISTRY_IMAGE/momo-frontend:latest
+
+deploy:
+  stage: deploy
+  image: alpine/k8s:1.24.16
+  environment:
+    name: k8s
+    url: https://devops-zimin.shop
+  needs:
+    - upload-frontend-release
+  when: manual
+  before_script:
+    - mkdir -p ~/.kube
+    - chmod 700 ~/.kube
+    - cat "$KUBE_CONFIG" >> ~/.kube/config
+    - cat "$KUBCERT" >> ~/.kube/ca.pem
+    - chmod 644 ~/.kube/config
+  script:
+    - kubectl config set-context default --namespace=default
+    - kubectl apply -f frontend/kubernetes
+    - kubectl rollout restart deploy frontend
+  after_script:
+    - rm ~/.kube/config
+  only:
+    - branches
+  except:
+    - main

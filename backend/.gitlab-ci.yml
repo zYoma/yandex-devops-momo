@@ -1,0 +1,100 @@
+stages:
+  - build
+  - test
+  - release
+  - deploy
+
+include:
+  - template: Security/SAST.gitlab-ci.yml
+  - project: 'templates/ci'
+    file: 'DockerInDockerTemplate.yml'
+
+variables:
+  VERSION: 1.0.${CI_PIPELINE_ID}
+  SAST_EXCLUDED_ANALYZERS: "eslint,gosec,nodejs-scan"
+
+build-backend-code-job:
+  stage: build
+  image: docker:20.10.12-dind-rootless
+  before_script:
+    - until docker info; do sleep 1; done
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - cd backend
+    - >
+      docker build
+      --build-arg VERSION=$VERSION
+      --tag $CI_REGISTRY_IMAGE/momo-backend:$CI_COMMIT_SHA
+      .
+    - docker push $CI_REGISTRY_IMAGE/momo-backend:$CI_COMMIT_SHA
+  rules:
+    - changes:
+        - backend/**/*
+
+sonarqube-backend-sast:
+  stage: test
+  image: sonarsource/sonar-scanner-cli:latest
+  script:
+    - cd backend
+    - >
+      sonar-scanner \
+        -Dsonar.projectKey=$SONAR_BACKEND_PROJECT_KEY \
+        -Dsonar.sources=. \
+        -Dsonar.host.url=$SONARQUBE_URL \
+        -Dsonar.login=$SONARQUBE_BACKEND_LOGIN
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .sonar/cache
+  needs:
+    - build-backend-code-job
+
+unit-test-backend-sast:
+  stage: test
+  image: golang:alpine
+  script:
+    - cd backend
+    - go test -v ./...
+  dependencies:
+    - build-backend-code-job
+
+upload-backend-release:
+  variables:
+    GIT_STRATEGY: none
+  image: docker:20.10.12-dind-rootless
+  stage: release
+  before_script:
+    - until docker info; do sleep 1; done
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  needs:
+    - unit-test-backend-sast
+  script:
+    - docker pull $CI_REGISTRY_IMAGE/momo-backend:$CI_COMMIT_SHA
+    - docker tag $CI_REGISTRY_IMAGE/momo-backend:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE/momo-backend:latest
+    - docker push $CI_REGISTRY_IMAGE/momo-backend:latest
+
+deploy:
+  stage: deploy
+  image: alpine/k8s:1.24.16
+  environment:
+    name: k8s
+    url: https://devops-zimin.shop
+  needs:
+    - upload-backend-release
+  when: manual
+  before_script:
+    - mkdir -p ~/.kube
+    - chmod 700 ~/.kube
+    - cat "$KUBE_CONFIG" >> ~/.kube/config
+    - cat "$KUBCERT" >> ~/.kube/ca.pem
+    - chmod 644 ~/.kube/config
+  script:
+    - kubectl config set-context default --namespace=default
+    - kubectl apply -f backend/kubernetes
+    - kubectl rollout restart deploy backend
+  after_script:
+    - rm ~/.kube/config
+  only:
+    - branches
+  except:
+    - main
