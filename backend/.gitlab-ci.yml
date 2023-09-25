@@ -38,10 +38,10 @@ sonarqube-backend-sast:
     - cd backend
     - >
       sonar-scanner \
-        -Dsonar.projectKey=momo-backend:zimin \
+        -Dsonar.projectKey=$SONAR_BACKEND_PROJECT_KEY \
         -Dsonar.sources=. \
-        -Dsonar.host.url=https://sonarqube.praktikum-services.ru \
-        -Dsonar.login=00f56194c724fb7b73e3f8b97d26a9abe707595d
+        -Dsonar.host.url=$SONARQUBE_URL \
+        -Dsonar.login=$SONARQUBE_BACKEND_LOGIN
   cache:
     key: "${CI_JOB_NAME}"
     paths:

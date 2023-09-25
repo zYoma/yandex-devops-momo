@@ -6,7 +6,7 @@ metadata:
   labels:
     app: backend
 spec:
-  replicas: 1
+  replicas: 2
   revisionHistoryLimit: 15
   strategy:
     type: RollingUpdate
@@ -38,5 +38,13 @@ spec:
           ports:
             - name: backend
               containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            timeoutSeconds: 1
+            failureThreshold: 6
       imagePullSecrets:
         - name: docker-config-secret
